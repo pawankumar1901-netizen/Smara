@@ -184,3 +184,33 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 ::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:99px}
 
 .action-bar{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── STICKY SHELL ── */
+.sticky-shell {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.sticky-shell .header { border-bottom: none; padding-bottom: 0; }
+.sticky-shell .nav { border-bottom: none; }
+.scroll-content { overflow-y: auto; flex: 1; }
+
+/* ── TOGGLE SWITCH ── */
+.toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--surface2); border-radius: 99px;
+  border: 1px solid var(--border-hover);
+  transition: .2s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--text-dim); bottom: 2px; left: 2px;
+  transition: .2s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+.toggle-switch input:checked + .toggle-slider::before { background: var(--bg); transform: translateX(20px); }

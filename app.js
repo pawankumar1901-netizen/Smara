@@ -544,6 +544,7 @@ function showPage(name){
   if(name==='topics'){ renderTopics(); updateSubjectList(); }
   if(name==='calendar') renderCalendar();
   if(name==='progress') renderProgress();
+  if(name==='settings') initNotifUI();
 }
 
 // ─── DAILY RESET ─────────────────────────────────────────────────────────────
@@ -716,3 +717,102 @@ async function gdriveRestore() {
 
 // Init on load
 gdriveInit();
+
+// ─── PUSH NOTIFICATIONS ──────────────────────────────────────────────────────
+function initNotifUI() {
+  const enabled = localStorage.getItem('smara_notif') === 'true';
+  const time = localStorage.getItem('smara_notif_time') || '08:00';
+  const toggle = document.getElementById('notif-toggle');
+  const timeRow = document.getElementById('notif-time-row');
+  const timeInput = document.getElementById('notif-time');
+  const status = document.getElementById('notif-status');
+  if (toggle) toggle.checked = enabled;
+  if (timeInput) timeInput.value = time;
+  if (timeRow) timeRow.style.display = enabled ? 'flex' : 'none';
+  if (status) {
+    if (!('Notification' in window)) {
+      status.textContent = 'Notifications not supported on this browser';
+    } else if (Notification.permission === 'denied') {
+      status.textContent = 'Notifications blocked — enable in browser settings';
+      status.style.color = 'var(--red)';
+    } else if (enabled) {
+      status.textContent = `Reminder set for ${time} daily`;
+      status.style.color = 'var(--green)';
+    }
+  }
+}
+
+async function toggleNotifications(checked) {
+  const timeRow = document.getElementById('notif-time-row');
+  const status = document.getElementById('notif-status');
+  if (checked) {
+    if (!('Notification' in window)) { toast('Not supported on this browser'); return; }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      document.getElementById('notif-toggle').checked = false;
+      toast('Please allow notifications in browser settings');
+      if (status) { status.textContent = 'Permission denied — enable in browser settings'; status.style.color = 'var(--red)'; }
+      return;
+    }
+    localStorage.setItem('smara_notif', 'true');
+    if (timeRow) timeRow.style.display = 'flex';
+    scheduleNotification();
+    toast('Daily reminder enabled ✓');
+    if (status) { status.textContent = `Reminder set for ${localStorage.getItem('smara_notif_time')||'08:00'} daily`; status.style.color = 'var(--green)'; }
+  } else {
+    localStorage.setItem('smara_notif', 'false');
+    if (timeRow) timeRow.style.display = 'none';
+    if (status) { status.textContent = ''; }
+    toast('Reminder disabled');
+  }
+}
+
+function saveNotifTime(val) {
+  localStorage.setItem('smara_notif_time', val);
+  scheduleNotification();
+  toast('Reminder time updated to ' + val);
+  const status = document.getElementById('notif-status');
+  if (status) { status.textContent = `Reminder set for ${val} daily`; status.style.color = 'var(--green)'; }
+}
+
+function scheduleNotification() {
+  if (Notification.permission !== 'granted') return;
+  const time = localStorage.getItem('smara_notif_time') || '08:00';
+  const [h, m] = time.split(':').map(Number);
+  const now = new Date();
+  const next = new Date();
+  next.setHours(h, m, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const delay = next - now;
+  // Clear old timer
+  const old = localStorage.getItem('smara_notif_timer');
+  if (old) clearTimeout(parseInt(old));
+  const due = getDue().length;
+  const timerId = setTimeout(() => {
+    if (localStorage.getItem('smara_notif') === 'true') {
+      new Notification('Smara — Time to revise!', {
+        body: due > 0 ? `You have ${due} topic${due>1?'s':''} due for review today.` : 'Keep your streak going — review your topics!',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png'
+      });
+      scheduleNotification(); // reschedule for next day
+    }
+  }, delay);
+  localStorage.setItem('smara_notif_timer', timerId.toString());
+}
+
+// Fire notification on load if enabled
+if (localStorage.getItem('smara_notif') === 'true' && Notification.permission === 'granted') {
+  scheduleNotification();
+}
+
+// ─── REMOVE SAMPLE DATA ──────────────────────────────────────────────────────
+function removeSampleData() {
+  const sampleTitles = ["Newton's Second Law", 'Mitosis phases', 'French Revolution causes', 'Pythagoras theorem', 'Supply & demand'];
+  const before = db.topics.length;
+  db.topics = db.topics.filter(t => !sampleTitles.includes(t.title));
+  const removed = before - db.topics.length;
+  if (!removed) { toast('No sample data found'); return; }
+  saveDB(); renderTopics(); updateMetrics();
+  toast(`Removed ${removed} sample topic${removed>1?'s':''}`);
+}
