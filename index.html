@@ -73,13 +73,22 @@
 
 <!-- TOPICS -->
 <main id="page-topics" class="page">
-  <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;margin-bottom:16px" onclick="showAddModal()">
-    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Add new topic
-  </button>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px">
-    <div class="section-head" style="margin:0">All topics</div>
-    <select id="filter-subj" style="width:auto;min-width:120px;padding:7px 28px 7px 10px;font-size:12px" onchange="renderTopics()">
+  <!-- Add + Search in one line -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+    <button class="btn btn-primary" style="flex:1;justify-content:center;padding:11px" onclick="showAddModal()">
+      <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add topic
+    </button>
+    <div style="position:relative;flex:1">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-dim);fill:none;stroke-width:1.5;position:absolute;left:10px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="topic-search" placeholder="Search topics…" autocomplete="off"
+        style="width:100%;padding:11px 12px 11px 32px;font-size:13px"
+        oninput="topicSearch=this.value;renderTopics()">
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px">
+    <div class="section-head" style="margin:0" id="topics-count"></div>
+    <select id="filter-subj" style="width:auto;min-width:110px;padding:6px 28px 6px 10px;font-size:12px" onchange="renderTopics()">
       <option value="">All subjects</option>
     </select>
   </div>
@@ -337,6 +346,50 @@
       <button class="btn" onclick="closeNotesModal()">Cancel</button>
     </div>
   </div>
+</div>
+
+<!-- EDIT TOPIC MODAL -->
+<div id="edit-modal" class="add-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="add-modal-inner">
+    <div class="add-modal-title">
+      Edit topic
+      <button class="modal-close" onclick="closeEditModal()">×</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" id="edit-title" placeholder="Topic name" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subject</label>
+      <input type="text" id="edit-subject" placeholder="e.g. Physics" list="edit-subj-datalist" autocomplete="off">
+      <datalist id="edit-subj-datalist"></datalist>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(comma-separated)</span></label>
+      <input type="text" id="edit-tags" placeholder="exam, formula, chapter-3" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes title</label>
+      <input type="text" id="edit-notes-title" placeholder="Notes title (optional)" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes content</label>
+      <textarea id="edit-notes-content" placeholder="Notes content…" style="min-height:120px"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;padding-bottom:8px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveEdit()">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>
+        Save changes
+      </button>
+      <button class="btn" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;cursor:zoom-out">
+  <img id="lightbox-img" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px">
+  <button onclick="closeLightbox()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
 </div>
 
 <div id="toast" class="toast"></div>
