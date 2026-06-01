@@ -214,3 +214,42 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 }
 .toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
 .toggle-switch input:checked + .toggle-slider::before { background: var(--bg); transform: translateX(20px); }
+
+/* ── HOME TABS ── */
+.home-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.home-tab{flex:1;padding:9px 4px 10px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-dim);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:.15s;position:relative}
+.home-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-badge{background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;margin-left:4px;vertical-align:middle;display:inline-flex;align-items:center}
+
+/* ── HOME CARD ── */
+.home-card{margin-bottom:10px}
+.done-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--accent);color:var(--bg);border:none;border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:.15s;width:100%;justify-content:center}
+.done-btn:hover{opacity:.88}
+.done-btn:active{transform:scale(.98)}
+
+/* ── TOPIC LIST CARD ── */
+.topic-list-card{margin-bottom:8px}
+.progress-ring-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.progress-ring-wrap span{position:absolute;font-size:9px;font-weight:500}
+
+/* ── TOPICS GRID ── */
+.topics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:4px}
+
+/* ── SUBJECT GROUP ── */
+.subject-group{margin-bottom:12px}
+.subject-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;margin-bottom:4px;transition:var(--transition)}
+.subject-header:hover{background:var(--surface2)}
+.subject-items{padding-left:0}
+
+/* ── VIEW TOGGLE ── */
+.view-toggle{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-dim);cursor:pointer;transition:.15s}
+.view-toggle.active{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent)}
+
+/* ── ICON BTN ── */
+.icon-btn{width:34px;height:34px;padding:0;justify-content:center;border-radius:50%;border-color:var(--border)}
+
+/* ── STAT CARD ── */
+.stat-card{border:1px solid;border-radius:var(--radius-md);padding:14px 12px;text-align:center}
+
+/* ── DETAIL PAGE ── */
+#page-detail{padding:16px 20px}

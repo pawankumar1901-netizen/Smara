@@ -15,19 +15,24 @@
 </head>
 <body class="theme-dark">
 
-<!-- STICKY HEADER + NAV -->
+<!-- STICKY SHELL -->
 <div class="sticky-shell">
   <header class="header">
     <div>
       <div class="wordmark">Sm<span>a</span>ra</div>
       <div class="tagline">Recall · Refine · Repeat</div>
     </div>
-    <!-- Only + button in header -->
-    <button class="btn btn-sm btn-ghost" onclick="showAddModal()" title="Add topic" style="width:36px;height:36px;padding:0;justify-content:center;border-radius:50%;border-color:var(--border-hover)">
-      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </button>
+    <div style="display:flex;gap:6px;align-items:center">
+      <!-- Stats icon -->
+      <button class="btn btn-sm btn-ghost icon-btn" onclick="showStatsSheet()" title="Revision statistics">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </button>
+      <!-- Add topic -->
+      <button class="btn btn-sm btn-ghost icon-btn" onclick="showAddModal()" title="Add topic">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
   </header>
-
   <nav class="nav">
     <button class="nav-btn active" id="nav-today" onclick="showPage('today')">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -42,7 +47,7 @@
       Calendar
     </button>
     <button class="nav-btn" id="nav-progress" onclick="showPage('progress')">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Progress
     </button>
     <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
@@ -52,28 +57,25 @@
   </nav>
 </div>
 
-<!-- SCROLLABLE CONTENT -->
 <div class="scroll-content">
 
-<!-- TODAY -->
+<!-- ═══ TODAY PAGE ═══ -->
 <main id="page-today" class="page active">
   <div class="today-hero">
     <div class="today-date" id="today-date"></div>
     <div class="today-greeting" id="greeting"></div>
   </div>
-  <div class="metrics">
-    <div class="metric"><div class="metric-num" id="m-due">0</div><div class="metric-lbl">Due</div></div>
-    <div class="metric"><div class="metric-num" id="m-done">0</div><div class="metric-lbl">Done</div></div>
-    <div class="metric"><div class="metric-num" id="m-missed">0</div><div class="metric-lbl">Missed</div></div>
-    <div class="metric"><div class="metric-num" id="m-total">0</div><div class="metric-lbl">Total</div></div>
+  <!-- Today / Missed / Upcoming tabs -->
+  <div class="home-tabs">
+    <button class="home-tab active" id="htab-today" onclick="switchHomeTab('today')">Today</button>
+    <button class="home-tab" id="htab-missed" onclick="switchHomeTab('missed')">Missed <span id="missed-badge" class="tab-badge" style="display:none"></span></button>
+    <button class="home-tab" id="htab-upcoming" onclick="switchHomeTab('upcoming')">Upcoming</button>
   </div>
-  <div class="section-head">For review</div>
-  <div id="today-list"></div>
+  <div id="home-tab-content"></div>
 </main>
 
-<!-- TOPICS -->
+<!-- ═══ TOPICS PAGE ═══ -->
 <main id="page-topics" class="page">
-  <!-- Add + Search in one line -->
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
     <button class="btn btn-primary" style="flex:1;justify-content:center;padding:11px" onclick="showAddModal()">
       <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -81,14 +83,37 @@
     </button>
     <div style="position:relative;flex:1">
       <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-dim);fill:none;stroke-width:1.5;position:absolute;left:10px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="topic-search" placeholder="Search topics…" autocomplete="off"
-        style="width:100%;padding:11px 12px 11px 32px;font-size:13px"
+      <input type="text" id="topic-search" placeholder="Search…" autocomplete="off"
+        style="width:100%;padding:11px 10px 11px 32px;font-size:13px"
         oninput="topicSearch=this.value;renderTopics()">
     </div>
   </div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px">
-    <div class="section-head" style="margin:0" id="topics-count"></div>
-    <select id="filter-subj" style="width:auto;min-width:110px;padding:6px 28px 6px 10px;font-size:12px" onchange="renderTopics()">
+  <!-- Sort + view controls -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="section-head" style="margin:0" id="topics-count"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <!-- View toggle -->
+      <button class="view-toggle active" id="view-list" onclick="setTopicView('list')" title="List view">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+      <button class="view-toggle" id="view-grid" onclick="setTopicView('grid')" title="Grid view">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <!-- Sort -->
+      <select id="topic-sort" style="padding:6px 24px 6px 8px;font-size:12px;width:auto" onchange="renderTopics()">
+        <option value="default">All topics</option>
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="progress">By progress</option>
+        <option value="az">A–Z</option>
+      </select>
+    </div>
+  </div>
+  <!-- Subject filter -->
+  <div style="margin-bottom:10px">
+    <select id="filter-subj" style="width:100%;padding:8px 28px 8px 10px;font-size:13px" onchange="renderTopics()">
       <option value="">All subjects</option>
     </select>
   </div>
@@ -96,7 +121,23 @@
   <div style="height:80px"></div>
 </main>
 
-<!-- CALENDAR -->
+<!-- ═══ TOPIC DETAIL PAGE ═══ -->
+<main id="page-detail" class="page">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn btn-ghost btn-sm" onclick="showPage('topics')" style="padding:6px">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div style="flex:1;min-width:0">
+      <div id="detail-title" style="font-family:'Playfair Display',serif;font-size:20px;font-weight:400;color:var(--text)"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="openEditFromDetail()" style="padding:6px">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+  </div>
+  <div id="detail-content"></div>
+</main>
+
+<!-- ═══ CALENDAR PAGE ═══ -->
 <main id="page-calendar" class="page">
   <div style="display:flex;gap:6px;margin-bottom:14px">
     <button class="cal-view-btn active" id="cal-view-month" onclick="setCalView('month')">Month</button>
@@ -121,17 +162,16 @@
   <div id="cal-sel-date" data-date="" style="display:none"></div>
 </main>
 
-<!-- PROGRESS -->
+<!-- ═══ PROGRESS PAGE ═══ -->
 <main id="page-progress" class="page">
   <div class="section-head">Progress</div>
   <div id="progress-content"></div>
 </main>
 
-<!-- SETTINGS -->
+<!-- ═══ SETTINGS PAGE ═══ -->
 <main id="page-settings" class="page">
   <div class="section-head">Settings</div>
 
-  <!-- APPEARANCE -->
   <div class="settings-block">
     <div class="settings-title">🎨 Appearance</div>
     <div class="settings-row">
@@ -143,7 +183,6 @@
     </div>
   </div>
 
-  <!-- NOTIFICATIONS -->
   <div class="settings-block">
     <div class="settings-title">🔔 Notifications</div>
     <div class="settings-row">
@@ -164,7 +203,6 @@
     <div id="notif-status" style="font-size:11px;color:var(--text-dim);margin-top:8px"></div>
   </div>
 
-  <!-- REVISION CYCLE -->
   <div class="settings-block">
     <div class="settings-title">Revision cycle</div>
     <div style="display:flex;justify-content:space-between;padding:8px 0 12px">
@@ -177,45 +215,28 @@
     <p style="font-size:12px;color:var(--text-dim);line-height:1.6">Based on Ebbinghaus spaced repetition. Scientifically proven for long-term memory.</p>
   </div>
 
-  <!-- SAMPLE DATA -->
   <div class="settings-block">
     <div class="settings-title">📚 Sample data</div>
-    <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:12px">Load sample topics to explore the app, then remove them when ready.</p>
+    <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:12px">Load sample topics to explore the app.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-sm" onclick="loadSample()">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        Load sample data
-      </button>
-      <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="removeSampleData()">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        Remove sample data
-      </button>
+      <button class="btn btn-sm" onclick="loadSample()">Load sample data</button>
+      <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="removeSampleData()">Remove sample data</button>
     </div>
   </div>
 
-  <!-- GOOGLE DRIVE -->
   <div class="settings-block">
     <div class="settings-title">☁ Google Drive sync</div>
-    <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:12px">Sync your topics to your own Google Drive. Saved as <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:4px">smara_backup.json</code> in your Drive.</p>
-    <div id="gdrive-status" style="font-size:12px;color:var(--text-dim);background:var(--surface2);padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:12px;line-height:1.5">
-      <span id="gdrive-status-text">Not connected — sign in to enable sync</span>
+    <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:12px">Sync to your Google Drive as <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:4px">smara_backup.json</code>.</p>
+    <div id="gdrive-status" style="font-size:12px;color:var(--text-dim);background:var(--surface2);padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:12px">
+      <span id="gdrive-status-text">Not connected</span>
     </div>
     <div id="gdrive-btns-disconnected" style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-sm btn-primary" onclick="gdriveSignIn()">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-        Sign in with Google
-      </button>
+      <button class="btn btn-sm btn-primary" onclick="gdriveSignIn()">Sign in with Google</button>
     </div>
     <div id="gdrive-btns-connected" style="display:none;flex-direction:column;gap:10px">
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-sm btn-primary" onclick="gdriveSyncNow()" id="btn-sync">
-          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          Sync now
-        </button>
-        <button class="btn btn-sm" onclick="gdriveRestore()">
-          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Restore from Drive
-        </button>
+        <button class="btn btn-sm btn-primary" onclick="gdriveSyncNow()" id="btn-sync">Sync now</button>
+        <button class="btn btn-sm" onclick="gdriveRestore()">Restore from Drive</button>
         <button class="btn btn-sm btn-ghost" onclick="gdriveSignOut()">Sign out</button>
       </div>
       <div id="gdrive-last-sync" style="font-size:11px;color:var(--text-dim)"></div>
@@ -224,35 +245,30 @@
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Local backup</div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-sm btn-ghost" onclick="exportBackup()">Download JSON</button>
-      <label class="btn btn-sm btn-ghost" style="cursor:pointer">Restore file <input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
+      <label class="btn btn-sm btn-ghost" style="cursor:pointer">Restore file<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
     </div>
   </div>
 
-  <!-- DANGER ZONE -->
   <div class="settings-block">
     <div class="settings-title" style="color:var(--red)">⚠ Danger zone</div>
     <button class="btn btn-sm" style="color:var(--red);border-color:rgba(224,123,106,0.2);background:var(--red-dim)" onclick="clearAll()">Clear all data</button>
   </div>
 
-  <!-- FOOTER -->
   <div style="margin-top:28px;text-align:center;padding-bottom:20px">
     <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--accent)">Smara</div>
     <div style="font-size:11px;color:var(--text-dim);margin-top:4px">by pawansDr.oid</div>
   </div>
 </main>
 
-</div><!-- end scroll-content -->
+</div><!-- scroll-content -->
 
-<!-- ADD TOPIC MODAL -->
+<!-- ═══ ADD TOPIC MODAL ═══ -->
 <div id="add-modal" class="add-modal" onclick="if(event.target===this)hideAddModal()">
   <div class="add-modal-inner">
-    <div class="add-modal-title">
-      <span>New topic</span>
-      <button class="modal-close" onclick="hideAddModal()">×</button>
-    </div>
+    <div class="add-modal-title">New topic <button class="modal-close" onclick="hideAddModal()">×</button></div>
     <div class="form-group">
-      <label class="form-label">Title *</label>
-      <input type="text" id="inp-title" placeholder="Topic name" autocomplete="off">
+      <label class="form-label">Topic title *</label>
+      <input type="text" id="inp-title" placeholder="e.g. Biostatistics" autocomplete="off">
     </div>
     <div class="form-group">
       <label class="form-label">Subject</label>
@@ -260,7 +276,7 @@
       <datalist id="subj-datalist"></datalist>
     </div>
     <div class="form-group">
-      <label class="form-label">Studied on</label>
+      <label class="form-label">Studied on (Day 0)</label>
       <input type="date" id="inp-date" style="width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
     </div>
     <div class="form-group">
@@ -268,7 +284,7 @@
       <div class="cycle-option selected" id="cycle-default" onclick="selectCycle('default')">
         <div style="display:flex;align-items:center;gap:10px">
           <div class="cycle-radio active" id="radio-default"></div>
-          <div><div style="font-size:13px;color:var(--text)">Default (1, 7, 30, 90 days)</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Ebbinghaus spaced repetition</div></div>
+          <div><div style="font-size:13px;color:var(--text)">Default (Day 1, 7, 30, 90)</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Ebbinghaus spaced repetition</div></div>
         </div>
       </div>
       <div class="cycle-option" id="cycle-custom" onclick="selectCycle('custom')" style="margin-top:6px">
@@ -278,8 +294,9 @@
         </div>
       </div>
       <div id="custom-cycle-input" style="display:none;margin-top:10px;padding:12px;background:var(--surface2);border-radius:var(--radius-sm)">
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">Days after study (comma-separated)</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">Days from Day 0 (comma-separated)</div>
         <input type="text" id="inp-custom-cycle" placeholder="e.g. 1, 3, 7, 14, 30">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:5px">Day 0 = study day. Enter days after that.</div>
       </div>
     </div>
     <div class="form-group">
@@ -316,7 +333,7 @@
         <input type="file" accept=".pdf,.docx,.doc,.txt" multiple style="display:none" onchange="handleDocs(this)">
       </label>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px;padding-bottom:8px">
+    <div style="display:flex;gap:8px;padding-bottom:8px">
       <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="addTopic()">
         <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>
         Create topic
@@ -326,20 +343,17 @@
   </div>
 </div>
 
-<!-- NOTES MODAL -->
+<!-- ═══ NOTES MODAL ═══ -->
 <div id="notes-modal" class="add-modal" onclick="if(event.target===this)closeNotesModal()">
   <div class="add-modal-inner">
-    <div class="add-modal-title">
-      Add notes
-      <button class="modal-close" onclick="closeNotesModal()">×</button>
+    <div class="add-modal-title">Add notes <button class="modal-close" onclick="closeNotesModal()">×</button></div>
+    <div class="form-group">
+      <label class="form-label">Title <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input type="text" id="notes-title-inp" placeholder="Notes title" autocomplete="off">
     </div>
     <div class="form-group">
-      <label class="form-label">Notes title <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(optional)</span></label>
-      <input type="text" id="notes-title-inp" placeholder="Notes title (optional)" autocomplete="off">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Notes content</label>
-      <textarea id="notes-content-inp" placeholder="Notes content" style="min-height:160px"></textarea>
+      <label class="form-label">Content</label>
+      <textarea id="notes-content-inp" placeholder="Notes content…" style="min-height:160px"></textarea>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveNotes()">Save</button>
@@ -348,82 +362,86 @@
   </div>
 </div>
 
-<!-- EDIT TOPIC MODAL -->
+<!-- ═══ EDIT TOPIC MODAL ═══ -->
 <div id="edit-modal" class="add-modal" onclick="if(event.target===this)closeEditModal()">
   <div class="add-modal-inner">
-    <div class="add-modal-title">
-      Edit topic
-      <button class="modal-close" onclick="closeEditModal()">×</button>
-    </div>
+    <div class="add-modal-title">Edit topic <button class="modal-close" onclick="closeEditModal()">×</button></div>
     <div class="form-group">
       <label class="form-label">Title *</label>
-      <input type="text" id="edit-title" placeholder="Topic name" autocomplete="off">
+      <input type="text" id="edit-title" autocomplete="off">
     </div>
     <div class="form-group">
       <label class="form-label">Subject</label>
-      <input type="text" id="edit-subject" placeholder="e.g. Physics" list="edit-subj-datalist" autocomplete="off">
+      <input type="text" id="edit-subject" list="edit-subj-datalist" autocomplete="off">
       <datalist id="edit-subj-datalist"></datalist>
     </div>
     <div class="form-group">
-      <label class="form-label">Tags <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(comma-separated)</span></label>
-      <input type="text" id="edit-tags" placeholder="exam, formula, chapter-3" autocomplete="off">
+      <label class="form-label">Tags</label>
+      <input type="text" id="edit-tags" autocomplete="off">
     </div>
     <div class="form-group">
       <label class="form-label">Notes title</label>
-      <input type="text" id="edit-notes-title" placeholder="Notes title (optional)" autocomplete="off">
+      <input type="text" id="edit-notes-title" autocomplete="off">
     </div>
     <div class="form-group">
       <label class="form-label">Notes content</label>
-      <textarea id="edit-notes-content" placeholder="Notes content…" style="min-height:120px"></textarea>
+      <textarea id="edit-notes-content" style="min-height:100px"></textarea>
     </div>
     <div style="display:flex;gap:8px;padding-bottom:8px">
-      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveEdit()">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>
-        Save changes
-      </button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveEdit()">Save changes</button>
       <button class="btn" onclick="closeEditModal()">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- IMAGE LIGHTBOX -->
+<!-- ═══ REVISION STATS BOTTOM SHEET ═══ -->
+<div id="stats-sheet" class="add-modal" onclick="if(event.target===this)closeStatsSheet()">
+  <div class="add-modal-inner" style="padding-bottom:24px">
+    <div class="add-modal-title">Revision statistics <button class="modal-close" onclick="closeStatsSheet()">×</button></div>
+    <div id="stats-content"></div>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM DONE SHEET ═══ -->
+<div id="confirm-done-sheet" class="add-modal" onclick="if(event.target===this)closeConfirmDone()">
+  <div class="add-modal-inner" style="padding-bottom:24px">
+    <div class="add-modal-title" id="confirm-done-title">Mark as revised? <button class="modal-close" onclick="closeConfirmDone()">×</button></div>
+    <p id="confirm-done-body" style="font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6"></p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" id="confirm-done-btn">Yes, done!</button>
+      <button class="btn" style="flex:1;justify-content:center" onclick="closeConfirmDone()">Not yet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LIGHTBOX ═══ -->
 <div id="lightbox" onclick="closeLightbox()" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;cursor:zoom-out">
   <img id="lightbox-img" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px">
   <button onclick="closeLightbox()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
 </div>
 
-<div id="toast" class="toast"></div>
-<!-- Update banner (hidden until SW fires) -->
-<div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:var(--accent);color:var(--bg);font-size:13px;font-family:'DM Sans',sans-serif;padding:10px 16px;display:none;align-items:center;justify-content:space-between;gap:10px">
+<div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:var(--accent);color:var(--bg);font-size:13px;font-family:'DM Sans',sans-serif;padding:10px 16px;align-items:center;justify-content:space-between;gap:10px">
   <span>✦ New version available</span>
   <button onclick="window.location.reload()" style="background:var(--bg);color:var(--accent);border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Refresh</button>
 </div>
 
+<div id="toast" class="toast"></div>
 <script src="app.js"></script>
 <script>
 function clearAll(){ if(!confirm('Delete all topics?')) return; db={topics:[],settings:{}}; saveDB(); renderToday(); toast('Cleared'); }
 showPage('today');
-
-// Listen for SW update message
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.type === 'SW_UPDATED') {
-      const banner = document.getElementById('update-banner');
-      if (banner) banner.style.display = 'flex';
-    }
-  });
-  // Also check on registration
-  navigator.serviceWorker.register('/sw.js').then(reg => {
-    reg.addEventListener('updatefound', () => {
-      const newSW = reg.installing;
-      newSW.addEventListener('statechange', () => {
-        if (newSW.state === 'activated') {
-          const banner = document.getElementById('update-banner');
-          if (banner) banner.style.display = 'flex';
-        }
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='activated'){ const b=document.getElementById('update-banner'); if(b) b.style.display='flex'; }
       });
     });
-  }).catch(() => {});
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener('message',e=>{
+    if(e.data&&e.data.type==='SW_UPDATED'){ const b=document.getElementById('update-banner'); if(b) b.style.display='flex'; }
+  });
 }
 </script>
 </body>

@@ -1,5 +1,5 @@
 // ─── UPDATE THIS VERSION STRING ON EVERY DEPLOY ───────────────────────────
-const CACHE = 'smara-v6';
+const CACHE = 'smara-v9';
 // ──────────────────────────────────────────────────────────────────────────
 
 const ASSETS = [
