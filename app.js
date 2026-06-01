@@ -556,7 +556,7 @@ function dailyReset(){
 // ─── INIT ────────────────────────────────────────────────────────────────────
 loadDB(); dailyReset(); updateSubjectList();
 applyTheme(currentTheme);
-if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
 
 // ─── GOOGLE DRIVE SYNC ───────────────────────────────────────────────────────
 const GDRIVE_CLIENT_ID = '219540837208-h2el5nf8d9b7538dseq0rqhlo6a0h90r.apps.googleusercontent.com';

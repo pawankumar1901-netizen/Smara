@@ -340,10 +340,38 @@
 </div>
 
 <div id="toast" class="toast"></div>
+<!-- Update banner (hidden until SW fires) -->
+<div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:var(--accent);color:var(--bg);font-size:13px;font-family:'DM Sans',sans-serif;padding:10px 16px;display:none;align-items:center;justify-content:space-between;gap:10px">
+  <span>✦ New version available</span>
+  <button onclick="window.location.reload()" style="background:var(--bg);color:var(--accent);border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Refresh</button>
+</div>
+
 <script src="app.js"></script>
 <script>
 function clearAll(){ if(!confirm('Delete all topics?')) return; db={topics:[],settings:{}}; saveDB(); renderToday(); toast('Cleared'); }
 showPage('today');
+
+// Listen for SW update message
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'SW_UPDATED') {
+      const banner = document.getElementById('update-banner');
+      if (banner) banner.style.display = 'flex';
+    }
+  });
+  // Also check on registration
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'activated') {
+          const banner = document.getElementById('update-banner');
+          if (banner) banner.style.display = 'flex';
+        }
+      });
+    });
+  }).catch(() => {});
+}
 </script>
 </body>
 </html>
