@@ -556,3 +556,163 @@ function dailyReset(){
 loadDB(); dailyReset(); updateSubjectList();
 applyTheme(currentTheme);
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
+// ─── GOOGLE DRIVE SYNC ───────────────────────────────────────────────────────
+const GDRIVE_CLIENT_ID = '219540837208-h2el5nf8d9b7538dseq0rqhlo6a0h90r.apps.googleusercontent.com';
+const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const BACKUP_FILENAME = 'smara_backup.json';
+
+let gdriveToken = null;
+let gdriveUser = null;
+
+// Called on page load — restore session if token saved
+function gdriveInit() {
+  const saved = localStorage.getItem('smara_gdrive');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      gdriveToken = parsed.token;
+      gdriveUser = parsed.user;
+      gdriveUpdateUI(true);
+    } catch {}
+  }
+}
+
+function gdriveSignIn() {
+  if (typeof google === 'undefined') {
+    toast('Google SDK not loaded — check connection'); return;
+  }
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GDRIVE_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email',
+    callback: async (resp) => {
+      if (resp.error) { toast('Sign in failed: ' + resp.error); return; }
+      gdriveToken = resp.access_token;
+      // Get user email
+      try {
+        const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { Authorization: 'Bearer ' + gdriveToken }
+        });
+        const u = await r.json();
+        gdriveUser = u.email;
+      } catch { gdriveUser = 'Connected'; }
+      localStorage.setItem('smara_gdrive', JSON.stringify({ token: gdriveToken, user: gdriveUser }));
+      gdriveUpdateUI(true);
+      toast('Signed in as ' + gdriveUser);
+    }
+  });
+  client.requestAccessToken();
+}
+
+function gdriveSignOut() {
+  if (gdriveToken) {
+    try { google.accounts.oauth2.revoke(gdriveToken, () => {}); } catch {}
+  }
+  gdriveToken = null; gdriveUser = null;
+  localStorage.removeItem('smara_gdrive');
+  gdriveUpdateUI(false);
+  toast('Signed out from Google Drive');
+}
+
+function gdriveUpdateUI(connected) {
+  const dis = document.getElementById('gdrive-btns-disconnected');
+  const con = document.getElementById('gdrive-btns-connected');
+  const statusText = document.getElementById('gdrive-status-text');
+  if (connected) {
+    dis.style.display = 'none';
+    con.style.display = 'flex';
+    statusText.innerHTML = `<span style="color:var(--green)">✓ Connected</span> · ${gdriveUser || ''}`;
+    const last = localStorage.getItem('smara_last_sync');
+    if (last) document.getElementById('gdrive-last-sync').textContent = 'Last synced: ' + new Date(last).toLocaleString('en-IN');
+  } else {
+    dis.style.display = 'flex';
+    con.style.display = 'none';
+    statusText.innerHTML = 'Not connected — sign in to enable sync';
+  }
+}
+
+async function gdriveSyncNow() {
+  if (!gdriveToken) { toast('Please sign in first'); return; }
+  const btn = document.getElementById('btn-sync');
+  btn.textContent = 'Syncing…'; btn.disabled = true;
+  try {
+    const data = JSON.stringify(db, null, 2);
+    // Check if file exists
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${BACKUP_FILENAME}'+and+trashed=false&spaces=drive&fields=files(id,name)`,
+      { headers: { Authorization: 'Bearer ' + gdriveToken } }
+    );
+    const searchData = await searchRes.json();
+    const existingFile = searchData.files && searchData.files[0];
+
+    const metadata = { name: BACKUP_FILENAME, mimeType: 'application/json' };
+    const blob = new Blob([data], { type: 'application/json' });
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+
+    let res;
+    if (existingFile) {
+      // Update existing file
+      res = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`,
+        { method: 'PATCH', headers: { Authorization: 'Bearer ' + gdriveToken }, body: form }
+      );
+    } else {
+      // Create new file
+      res = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { Authorization: 'Bearer ' + gdriveToken }, body: form }
+      );
+    }
+
+    if (res.ok) {
+      const now = new Date().toISOString();
+      localStorage.setItem('smara_last_sync', now);
+      document.getElementById('gdrive-last-sync').textContent = 'Last synced: ' + new Date(now).toLocaleString('en-IN');
+      toast('✓ Synced to Google Drive');
+    } else {
+      const err = await res.json();
+      if (err.error && err.error.code === 401) {
+        gdriveSignOut(); toast('Session expired — please sign in again');
+      } else {
+        toast('Sync failed: ' + (err.error?.message || 'Unknown error'));
+      }
+    }
+  } catch (e) {
+    toast('Sync error: ' + e.message);
+  }
+  btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync now';
+  btn.disabled = false;
+}
+
+async function gdriveRestore() {
+  if (!gdriveToken) { toast('Please sign in first'); return; }
+  if (!confirm('This will replace all local data with the Drive backup. Continue?')) return;
+  toast('Fetching from Drive…');
+  try {
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${BACKUP_FILENAME}'+and+trashed=false&spaces=drive&fields=files(id,name)`,
+      { headers: { Authorization: 'Bearer ' + gdriveToken } }
+    );
+    const searchData = await searchRes.json();
+    const file = searchData.files && searchData.files[0];
+    if (!file) { toast('No backup found in Drive'); return; }
+
+    const fileRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
+      { headers: { Authorization: 'Bearer ' + gdriveToken } }
+    );
+    const imported = await fileRes.json();
+    if (!Array.isArray(imported.topics)) throw new Error('Invalid backup');
+    db = { ...db, ...imported };
+    saveDB(); updateSubjectList(); renderToday();
+    toast(`✓ Restored ${db.topics.length} topics from Drive`);
+    showPage('today');
+  } catch (e) {
+    toast('Restore failed: ' + e.message);
+  }
+}
+
+// Init on load
+gdriveInit();
