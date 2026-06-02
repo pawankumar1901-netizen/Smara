@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0d" id="theme-meta">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Smara">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>Smara - Smart Revision Assist</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="theme-dark">
+
+<!-- STICKY SHELL -->
+<div class="sticky-shell">
+  <header class="header">
+    <div>
+      <div class="wordmark">Sm<span>a</span>ra</div>
+      <div class="tagline">Recall · Refine · Repeat</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <!-- Stats icon -->
+      <button class="btn btn-sm btn-ghost icon-btn" onclick="showStatsSheet()" title="Revision statistics">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </button>
+      <!-- Add topic -->
+      <button class="btn btn-sm btn-ghost icon-btn" onclick="showAddModal()" title="Add topic">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+  </header>
+  <nav class="nav">
+    <button class="nav-btn active" id="nav-today" onclick="showPage('today')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Today
+    </button>
+    <button class="nav-btn" id="nav-topics" onclick="showPage('topics')">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Topics
+    </button>
+    <button class="nav-btn" id="nav-calendar" onclick="showPage('calendar')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>
+      Calendar
+    </button>
+    <button class="nav-btn" id="nav-progress" onclick="showPage('progress')">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Progress
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </nav>
+</div>
+
+<div class="scroll-content">
+
+<!-- ═══ TODAY PAGE ═══ -->
+<main id="page-today" class="page active">
+  <div class="today-hero">
+    <div class="today-date" id="today-date"></div>
+    <div class="today-greeting" id="greeting"></div>
+  </div>
+  <!-- Today / Missed / Upcoming tabs -->
+  <div class="home-tabs">
+    <button class="home-tab active" id="htab-today" onclick="switchHomeTab('today')">Today</button>
+    <button class="home-tab" id="htab-missed" onclick="switchHomeTab('missed')">Missed <span id="missed-badge" class="tab-badge" style="display:none"></span></button>
+    <button class="home-tab" id="htab-upcoming" onclick="switchHomeTab('upcoming')">Upcoming</button>
+  </div>
+  <div id="home-tab-content"></div>
+</main>
+
+<!-- ═══ TOPICS PAGE ═══ -->
+<main id="page-topics" class="page">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+    <button class="btn btn-primary" style="flex:1;justify-content:center;padding:11px" onclick="showAddModal()">
+      <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add topic
+    </button>
+    <div style="position:relative;flex:1">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-dim);fill:none;stroke-width:1.5;position:absolute;left:10px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="topic-search" placeholder="Search…" autocomplete="off"
+        style="width:100%;padding:11px 10px 11px 32px;font-size:13px"
+        oninput="topicSearch=this.value;renderTopics()">
+    </div>
+  </div>
+  <!-- Sort + view controls -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="section-head" style="margin:0" id="topics-count"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <!-- View toggle -->
+      <button class="view-toggle active" id="view-list" onclick="setTopicView('list')" title="List view">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+      <button class="view-toggle" id="view-grid" onclick="setTopicView('grid')" title="Grid view">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <!-- Sort -->
+      <select id="topic-sort" style="padding:6px 24px 6px 8px;font-size:12px;width:auto" onchange="renderTopics()">
+        <option value="default">All topics</option>
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="progress">By progress</option>
+        <option value="az">A–Z</option>
+      </select>
+    </div>
+  </div>
+  <!-- Subject filter -->
+  <div style="margin-bottom:10px">
+    <select id="filter-subj" style="width:100%;padding:8px 28px 8px 10px;font-size:13px" onchange="renderTopics()">
+      <option value="">All subjects</option>
+    </select>
+  </div>
+  <div id="topics-list"></div>
+  <div style="height:80px"></div>
+</main>
+
+<!-- ═══ TOPIC DETAIL PAGE ═══ -->
+<main id="page-detail" class="page">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn btn-ghost btn-sm" onclick="showPage('topics')" style="padding:6px">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div style="flex:1;min-width:0">
+      <div id="detail-title" style="font-family:'Playfair Display',serif;font-size:20px;font-weight:400;color:var(--text)"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="openEditFromDetail()" style="padding:6px">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+  </div>
+  <div id="detail-content"></div>
+</main>
+
+<!-- ═══ CALENDAR PAGE ═══ -->
+<main id="page-calendar" class="page">
+  <div style="display:flex;gap:6px;margin-bottom:14px">
+    <button class="cal-view-btn active" id="cal-view-month" onclick="setCalView('month')">Month</button>
+    <button class="cal-view-btn" id="cal-view-week" onclick="setCalView('week')">Week</button>
+    <div style="flex:1"></div>
+    <button class="cal-collapse-btn" id="cal-collapse-btn" onclick="toggleCalCollapse()">
+      Hide <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+  </div>
+  <div id="cal-body">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calNav(-1)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="cal-month-label" id="cal-month"></span>
+      <button class="cal-nav" onclick="calNav(1)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="cal-weekdays"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+    <div id="cal-grid" class="cal-grid"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="cal-day-head" id="cal-day-label"></div>
+  <div id="cal-day-topics"></div>
+  <div id="cal-sel-date" data-date="" style="display:none"></div>
+</main>
+
+<!-- ═══ PROGRESS PAGE ═══ -->
+<main id="page-progress" class="page">
+  <div class="section-head">Progress</div>
+  <div id="progress-content"></div>
+</main>
+
+<!-- ═══ SETTINGS PAGE ═══ -->
+<main id="page-settings" class="page">
+  <div class="section-head">Settings</div>
+
+  <div class="settings-block">
+    <div class="settings-title">🎨 Appearance</div>
+    <div class="settings-row">
+      <span>Theme</span>
+      <div style="display:flex;gap:6px">
+        <button class="theme-pill active" id="pill-dark" onclick="setTheme('dark')">Dark</button>
+        <button class="theme-pill" id="pill-light" onclick="setTheme('light')">Light</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-block">
+    <div class="settings-title">🔔 Notifications</div>
+    <div class="settings-row">
+      <div>
+        <div style="font-size:13px;color:var(--text)">Daily revision reminder</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Remind me to revise each day</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="notif-toggle" onchange="toggleNotifications(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div id="notif-time-row" class="settings-row" style="display:none">
+      <span style="font-size:13px;color:var(--text-muted)">Reminder time</span>
+      <input type="time" id="notif-time" value="08:00" onchange="saveNotifTime(this.value)"
+        style="width:auto;padding:5px 10px;font-size:13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text)">
+    </div>
+    <div id="notif-status" style="font-size:11px;color:var(--text-dim);margin-top:8px"></div>
+  </div>
+
+  <div class="settings-block">
+    <div class="settings-title">Revision cycle</div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0 12px">
+      <div style="text-align:center;flex:1"><div style="font-size:14px;font-family:'Playfair Display',serif;color:var(--accent)">D0</div><div style="font-size:9px;color:var(--text-dim);margin-top:2px">Study</div></div>
+      <div style="text-align:center;flex:1"><div style="font-size:14px;font-family:'Playfair Display',serif;color:var(--accent)">D1</div><div style="font-size:9px;color:var(--text-dim);margin-top:2px">Rev 1</div></div>
+      <div style="text-align:center;flex:1"><div style="font-size:14px;font-family:'Playfair Display',serif;color:var(--accent)">D7</div><div style="font-size:9px;color:var(--text-dim);margin-top:2px">Rev 2</div></div>
+      <div style="text-align:center;flex:1"><div style="font-size:14px;font-family:'Playfair Display',serif;color:var(--accent)">D30</div><div style="font-size:9px;color:var(--text-dim);margin-top:2px">Rev 3</div></div>
+      <div style="text-align:center;flex:1"><div style="font-size:14px;font-family:'Playfair Display',serif;color:var(--accent)">D90</div><div style="font-size:9px;color:var(--text-dim);margin-top:2px">Rev 4</div></div>
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);line-height:1.6">Based on Ebbinghaus spaced repetition. Scientifically proven for long-term memory.</p>
+  </div>
+
+  <div class="settings-block">
+    <div class="settings-title">📚 Sample data</div>
+    <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:12px">Load sample topics to explore the app.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="loadSample()">Load sample data</button>
+      <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="removeSampleData()">Remove sample data</button>
+    </div>
+  </div>
+
+  <div class="settings-block">
+    <div class="settings-title">☁ Google Drive sync</div>
+    <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:12px">Sync to your Google Drive as <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:4px">smara_backup.json</code>.</p>
+    <div id="gdrive-status" style="font-size:12px;color:var(--text-dim);background:var(--surface2);padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:12px">
+      <span id="gdrive-status-text">Not connected</span>
+    </div>
+    <div id="gdrive-btns-disconnected" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-primary" onclick="gdriveSignIn()">Sign in with Google</button>
+    </div>
+    <div id="gdrive-btns-connected" style="display:none;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-primary" onclick="gdriveSyncNow()" id="btn-sync">Sync now</button>
+        <button class="btn btn-sm" onclick="gdriveRestore()">Restore from Drive</button>
+        <button class="btn btn-sm btn-ghost" onclick="gdriveSignOut()">Sign out</button>
+      </div>
+      <div id="gdrive-last-sync" style="font-size:11px;color:var(--text-dim)"></div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Local backup</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm btn-ghost" onclick="exportBackup()">Download JSON</button>
+      <label class="btn btn-sm btn-ghost" style="cursor:pointer">Restore file<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
+    </div>
+  </div>
+
+  <div class="settings-block">
+    <div class="settings-title" style="color:var(--red)">⚠ Danger zone</div>
+    <button class="btn btn-sm" style="color:var(--red);border-color:rgba(224,123,106,0.2);background:var(--red-dim)" onclick="clearAll()">Clear all data</button>
+  </div>
+
+  <div style="margin-top:28px;text-align:center;padding-bottom:20px">
+    <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--accent)">Smara</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px">by pawansDr.oid</div>
+  </div>
+</main>
+
+</div><!-- scroll-content -->
+
+<!-- ═══ ADD TOPIC MODAL ═══ -->
+<div id="add-modal" class="add-modal" onclick="if(event.target===this)hideAddModal()">
+  <div class="add-modal-inner">
+    <div class="add-modal-title">New topic <button class="modal-close" onclick="hideAddModal()">×</button></div>
+    <div class="form-group">
+      <label class="form-label">Topic title *</label>
+      <input type="text" id="inp-title" placeholder="e.g. Biostatistics" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subject</label>
+      <input type="text" id="inp-subject" placeholder="e.g. Physics" list="subj-datalist" autocomplete="off">
+      <datalist id="subj-datalist"></datalist>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Studied on (Day 0)</label>
+      <input type="date" id="inp-date" style="width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Revision cycle</label>
+      <div class="cycle-option selected" id="cycle-default" onclick="selectCycle('default')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="cycle-radio active" id="radio-default"></div>
+          <div><div style="font-size:13px;color:var(--text)">Default (Day 1, 7, 30, 90)</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Ebbinghaus spaced repetition</div></div>
+        </div>
+      </div>
+      <div class="cycle-option" id="cycle-custom" onclick="selectCycle('custom')" style="margin-top:6px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="cycle-radio" id="radio-custom"></div>
+          <div><div style="font-size:13px;color:var(--text)">Custom cycle</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Set your own revision days</div></div>
+        </div>
+      </div>
+      <div id="custom-cycle-input" style="display:none;margin-top:10px;padding:12px;background:var(--surface2);border-radius:var(--radius-sm)">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">Days from Day 0 (comma-separated)</div>
+        <input type="text" id="inp-custom-cycle" placeholder="e.g. 1, 3, 7, 14, 30">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:5px">Day 0 = study day. Enter days after that.</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(comma-separated)</span></label>
+      <input type="text" id="inp-tags" placeholder="exam, formula, chapter-3" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <div id="notes-preview-area" style="display:none;background:var(--surface2);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;border-left:2px solid var(--accent)">
+        <div style="font-size:12px;font-weight:500;color:var(--accent);margin-bottom:4px" id="notes-preview-title"></div>
+        <div style="font-size:13px;color:var(--text-muted);white-space:pre-wrap" id="notes-preview-content"></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;font-size:11px" onclick="openNotesModal()">Edit notes</button>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;border-style:dashed" id="add-notes-btn" onclick="openNotesModal()">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Add notes
+      </button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Images <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(optional)</span></label>
+      <div id="image-preview-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <label class="btn btn-ghost" style="width:100%;justify-content:center;border-style:dashed;cursor:pointer">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Add images
+        <input type="file" accept="image/*" multiple style="display:none" onchange="handleImages(this)">
+      </label>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Documents <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(optional)</span></label>
+      <div id="doc-list" style="margin-bottom:8px"></div>
+      <label class="btn btn-ghost" style="width:100%;justify-content:center;border-style:dashed;cursor:pointer">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Add documents
+        <input type="file" accept=".pdf,.docx,.doc,.txt" multiple style="display:none" onchange="handleDocs(this)">
+      </label>
+    </div>
+    <div style="display:flex;gap:8px;padding-bottom:8px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="addTopic()">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>
+        Create topic
+      </button>
+      <button class="btn" onclick="hideAddModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ NOTES MODAL ═══ -->
+<div id="notes-modal" class="add-modal" onclick="if(event.target===this)closeNotesModal()">
+  <div class="add-modal-inner">
+    <div class="add-modal-title">Add notes <button class="modal-close" onclick="closeNotesModal()">×</button></div>
+    <div class="form-group">
+      <label class="form-label">Title <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input type="text" id="notes-title-inp" placeholder="Notes title" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Content</label>
+      <textarea id="notes-content-inp" placeholder="Notes content…" style="min-height:160px"></textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveNotes()">Save</button>
+      <button class="btn" onclick="closeNotesModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDIT TOPIC MODAL ═══ -->
+<div id="edit-modal" class="add-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="add-modal-inner">
+    <div class="add-modal-title">Edit topic <button class="modal-close" onclick="closeEditModal()">×</button></div>
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" id="edit-title" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subject</label>
+      <input type="text" id="edit-subject" list="edit-subj-datalist" autocomplete="off">
+      <datalist id="edit-subj-datalist"></datalist>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <input type="text" id="edit-tags" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes title</label>
+      <input type="text" id="edit-notes-title" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes content</label>
+      <textarea id="edit-notes-content" style="min-height:100px"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;padding-bottom:8px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveEdit()">Save changes</button>
+      <button class="btn" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ REVISION STATS BOTTOM SHEET ═══ -->
+<div id="stats-sheet" class="add-modal" onclick="if(event.target===this)closeStatsSheet()">
+  <div class="add-modal-inner" style="padding-bottom:24px">
+    <div class="add-modal-title">Revision statistics <button class="modal-close" onclick="closeStatsSheet()">×</button></div>
+    <div id="stats-content"></div>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM DONE SHEET ═══ -->
+<div id="confirm-done-sheet" class="add-modal" onclick="if(event.target===this)closeConfirmDone()">
+  <div class="add-modal-inner" style="padding-bottom:24px">
+    <div class="add-modal-title" id="confirm-done-title">Mark as revised? <button class="modal-close" onclick="closeConfirmDone()">×</button></div>
+    <p id="confirm-done-body" style="font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6"></p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" id="confirm-done-btn">Yes, done!</button>
+      <button class="btn" style="flex:1;justify-content:center" onclick="closeConfirmDone()">Not yet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LIGHTBOX ═══ -->
+<div id="lightbox" onclick="closeLightbox()" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;cursor:zoom-out">
+  <img id="lightbox-img" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px">
+  <button onclick="closeLightbox()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+</div>
+
+<div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:var(--accent);color:var(--bg);font-size:13px;font-family:'DM Sans',sans-serif;padding:10px 16px;align-items:center;justify-content:space-between;gap:10px">
+  <span>✦ New version available</span>
+  <button onclick="window.location.reload()" style="background:var(--bg);color:var(--accent);border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Refresh</button>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+<script>
+function clearAll(){ if(!confirm('Delete all topics?')) return; db={topics:[],settings:{}}; saveDB(); renderToday(); toast('Cleared'); }
+showPage('today');
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='activated'){ const b=document.getElementById('update-banner'); if(b) b.style.display='flex'; }
+      });
+    });
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener('message',e=>{
+    if(e.data&&e.data.type==='SW_UPDATED'){ const b=document.getElementById('update-banner'); if(b) b.style.display='flex'; }
+  });
+}
+</script>
+</body>
+</html>
