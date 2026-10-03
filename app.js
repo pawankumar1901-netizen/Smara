@@ -16,7 +16,7 @@ function loadDB(){
     }
   }catch(e){ console.warn('[Smara] DB load error:',e); db={topics:[],settings:{}}; }
 }
-function saveDB(){ try{ db.savedAt=new Date().toISOString(); localStorage.setItem(STORE,JSON.stringify(db)); }catch{} }
+function saveDB(){ try{ db.savedAt=new Date().toISOString(); localStorage.setItem(STORE,JSON.stringify(db)); return true; }catch(e){ console.warn('[Smara] DB save error:',e); toast('⚠ Could not save — storage full. Remove some images.'); return false; } }
 
 // ─── THEME ───────────────────────────────────────────────────────────────────
 let currentTheme=localStorage.getItem('smara_theme')||'dark';
@@ -86,7 +86,8 @@ function getTopicStatus(tp){
 // ─── DATE UTILS ──────────────────────────────────────────────────────────────
 const toDate=d=>new Date(d+'T00:00:00');
 // FIX: use LOCAL date not UTC — prevents IST users seeing wrong date after midnight UTC
-function today(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function today(){ return ymd(new Date()); }
 function addDays(dateStr,n){ if(!dateStr||typeof dateStr!=='string') return today(); const d=toDate(dateStr); if(isNaN(d.getTime())) return today(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtDate(ds){
   if(!ds) return '—';
@@ -278,7 +279,7 @@ function buildHomeCard(tp, context){
           <span style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.07em">${esc(tp.subject)||'No subject'}</span>
           <span style="font-size:11px;color:var(--text-dim)">· Started ${fmtDate(tp.created)}</span>
         </div>
-        <div style="font-size:16px;font-weight:500;color:var(--text);font-family:'Playfair Display',serif">${tp.title}</div>
+        <div style="font-size:16px;font-weight:500;color:var(--text);font-family:'Playfair Display',serif">${esc(tp.title)}</div>
       </div>
       ${statusBadge}
     </div>
@@ -287,7 +288,7 @@ function buildHomeCard(tp, context){
       <span style="font-size:11px;color:${color}">${Math.round(completed/total*100)}%</span>
     </div>`:''}
     ${!isNew?timelineBar(tp):'<div style="font-size:12px;color:var(--text-dim);margin-top:6px">Mark as studied to start your revision cycle</div>'}
-    ${!isDone&&!isNew&&getTopicStatus(tp)!=='done_today'?`<button class="done-btn" onclick="event.stopPropagation();showConfirmDone('${tp.id}','${isNew?'study':context}')" style="margin-top:12px">
+    ${(context==='due'||isMissed)?`<button class="done-btn" onclick="event.stopPropagation();showConfirmDone('${tp.id}','${isNew?'study':context}')" style="margin-top:12px">
       ${isMissed?'Mark as revised →':'Done →'}
     </button>`:''}
     ${isNew?`<button class="done-btn" onclick="event.stopPropagation();markStudied('${tp.id}')" style="margin-top:12px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border)">
@@ -306,7 +307,7 @@ function markStudied(id){
   tp.history=tp.history||[];
   tp.history.push({date:today(),type:'studied',rep:0});
   saveDB(); renderToday(); updateHomeBadges();
-  toast(`✓ Studied! Revision 1 scheduled for ${formatDate(addDays(tp.created,getCycleRevisions(tp)[0]))}`);
+  toast(`✓ Studied! Revision 1 scheduled for ${formatDate(getNextDueDate(tp))}`);
 }
 
 // ─── CONFIRM DONE SHEET ──────────────────────────────────────────────────────
@@ -367,7 +368,7 @@ function renderTopics(){
   // Update subject dropdown
   const subjects=[...new Set(db.topics.map(t=>t.subject).filter(Boolean))];
   const sel=document.getElementById('filter-subj'); const cur=sel.value;
-  sel.innerHTML=`<option value="">All subjects</option>${subjects.map(s=>`<option value="${s}" ${s===cur?'selected':''}>${s}</option>`).join('')}`;
+  sel.innerHTML=`<option value="">All subjects</option>${subjects.map(s=>`<option value="${esc(s)}" ${s===cur?'selected':''}>${esc(s)}</option>`).join('')}`;
 
   let list=[...db.topics];
   if(filterSubj) list=list.filter(t=>t.subject===filterSubj);
@@ -413,7 +414,7 @@ function renderTopics(){
       <div class="subject-header" onclick="toggleSubjectGroup('${groupId}')">
         <div style="display:flex;align-items:center;gap:8px">
           <span class="dot" style="background:${color};width:8px;height:8px"></span>
-          <span style="font-size:13px;font-weight:500;color:var(--text)">${subj}</span>
+          <span style="font-size:13px;font-weight:500;color:var(--text)">${esc(subj)}</span>
           <span style="font-size:11px;color:var(--text-dim)">(${topics.length})</span>
         </div>
         <svg id="${groupId}-arrow" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;transition:.2s"><polyline points="18 15 12 9 6 15"/></svg>
@@ -500,8 +501,9 @@ function buildTopicCardGrid(tp){
 }
 
 function deleteTopic(id){
-  if(!confirm('Remove this topic?')) return;
+  if(!confirm('Remove this topic?')) return false;
   db.topics=db.topics.filter(t=>t.id!==id); saveDB(); renderTopics(); renderToday(); toast('Removed');
+  return true;
 }
 
 // ─── TOPIC DETAIL PAGE ───────────────────────────────────────────────────────
@@ -532,8 +534,8 @@ function renderDetailContent(tp){
   document.getElementById('detail-content').innerHTML=`
     <!-- Tags -->
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
-      ${tp.subject?`<span style="background:${color}22;color:${color};border:1px solid ${color}44;font-size:12px;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${color};display:inline-block"></span>${tp.subject}</span>`:''}
-      ${(tp.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}
+      ${tp.subject?`<span style="background:${color}22;color:${color};border:1px solid ${color}44;font-size:12px;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${color};display:inline-block"></span>${esc(tp.subject)}</span>`:''}
+      ${(tp.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}
     </div>
 
     <!-- Revision timeline -->
@@ -582,9 +584,9 @@ function renderDetailContent(tp){
     ${tp.notes&&(tp.notes.title||tp.notes.content)?`
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <span style="font-size:13px;font-weight:500;color:var(--text)">${tp.notes.title||'Notes'}</span>
+        <span style="font-size:13px;font-weight:500;color:var(--text)">${esc(tp.notes.title)||'Notes'}</span>
       </div>
-      <div style="font-size:13px;color:var(--text-muted);line-height:1.7;white-space:pre-wrap">${tp.notes.content||''}</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.7;white-space:pre-wrap">${esc(tp.notes.content)}</div>
     </div>
     `:``}
 
@@ -604,7 +606,7 @@ function renderDetailContent(tp){
       <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px">Documents</div>
       ${tp.docs.map(d=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-muted)">
         <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        ${d.name}
+        ${esc(d.name)}
       </div>`).join('')}
     </div>
     `:``}
@@ -618,7 +620,7 @@ function renderDetailContent(tp){
     `:``}
 
     <!-- Delete -->
-    <button class="btn btn-sm" style="color:var(--red);border-color:rgba(224,123,106,0.2);background:var(--red-dim);width:100%;justify-content:center;margin-top:8px;margin-bottom:40px" onclick="deleteTopic('${tp.id}');showPage('topics')">
+    <button class="btn btn-sm" style="color:var(--red);border-color:rgba(224,123,106,0.2);background:var(--red-dim);width:100%;justify-content:center;margin-top:8px;margin-bottom:40px" onclick="if(deleteTopic('${tp.id}'))showPage('topics')">
       Delete topic
     </button>
   `;
@@ -695,7 +697,7 @@ function showStatsSheet(){
 function closeStatsSheet(){ document.getElementById('stats-sheet').style.display='none'; }
 
 // ─── CALENDAR ────────────────────────────────────────────────────────────────
-let calYear,calMonth,calView='month',calCollapsed=false;
+let calYear,calMonth,calWeekStart,calView='month',calCollapsed=false;
 
 function buildFullDateMap(){
   const dateMap={};
@@ -746,14 +748,14 @@ function renderCalendar(){
       </div>`;
     }
   } else {
-    const base=new Date(calYear,calMonth,1);
-    const sow=new Date(base); sow.setDate(base.getDate()-base.getDay());
+    if(!calWeekStart){ calWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()); calWeekStart.setDate(calWeekStart.getDate()-calWeekStart.getDay()); }
+    const sow=new Date(calWeekStart);
     const eow=new Date(sow); eow.setDate(sow.getDate()+6);
-    headerLabel=`${sow.toLocaleDateString('en-IN',{month:'short'})} – ${eow.toLocaleDateString('en-IN',{month:'short'})} ${calYear}`;
+    headerLabel=`${sow.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} – ${eow.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
     const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     for(let i=0;i<7;i++){
       const d=new Date(sow); d.setDate(d.getDate()+i);
-      const ds=d.toISOString().split('T')[0];
+      const ds=ymd(d);
       const isToday=ds===today(); const entries=dateMap[ds]||[];
       const colors=[...new Set(entries.map(e=>getSubjectColor(e.tp.subject)))].slice(0,3);
       cells+=`<div class="cal-cell cal-week-cell${isToday?' cal-today':''}${entries.length?' cal-has-due':''}" onclick="showCalDay('${ds}')">
@@ -772,6 +774,7 @@ function renderCalendar(){
 }
 
 function calNav(dir){
+  if(calView==='week'&&calWeekStart){ calWeekStart.setDate(calWeekStart.getDate()+7*dir); renderCalendar(); return; }
   calMonth+=dir;
   if(calMonth>11){calMonth=0;calYear++;}
   if(calMonth<0){calMonth=11;calYear--;}
@@ -799,7 +802,7 @@ function showCalDay(ds){
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
               <span class="dot" style="background:${color}"></span>
-              <span style="font-size:11px;color:var(--text-dim)">${tp.subject||'No subject'}</span>
+              <span style="font-size:11px;color:var(--text-dim)">${esc(tp.subject)||'No subject'}</span>
             </div>
             <div style="font-size:14px;color:var(--text)">${esc(tp.title)}</div>
             <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Revision ${rev.revNum} · Day ${rev.dayNum}</div>
@@ -854,7 +857,7 @@ function renderProgress(){
       </div>
     </div>
     <div class="section-head">By subject</div>
-    ${Object.entries(bySubject).map(([s,v])=>{const p=Math.round(v.done/v.total*100);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><div style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:${v.color}"></span><span style="font-size:13px;color:var(--text-muted)">${s}</span></div><span style="font-size:12px;color:var(--text-dim)">${v.done}/${v.total}</span></div><div class="prog-wrap"><div class="prog-bar" style="width:${p}%;background:${v.color}"></div></div></div>`;}).join('')}`;
+    ${Object.entries(bySubject).map(([s,v])=>{const p=Math.round(v.done/v.total*100);return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><div style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:${v.color}"></span><span style="font-size:13px;color:var(--text-muted)">${esc(s)}</span></div><span style="font-size:12px;color:var(--text-dim)">${v.done}/${v.total}</span></div><div class="prog-wrap"><div class="prog-bar" style="width:${p}%;background:${v.color}"></div></div></div>`;}).join('')}`;
 }
 
 // ─── ADD MODAL ───────────────────────────────────────────────────────────────
@@ -923,7 +926,7 @@ function handleDocs(input){
     pendingDocs.push({name:file.name,size:file.size});
     const div=document.createElement('div');
     div.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:5px;font-size:13px;color:var(--text-muted)';
-    div.innerHTML=`<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${file.name}`;
+    div.innerHTML=`<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${esc(file.name)}`;
     list.appendChild(div);
   });
 }
@@ -964,7 +967,7 @@ function addTopic(){
 
 function updateSubjectList(){
   const subjects=[...new Set(db.topics.map(t=>t.subject).filter(Boolean))];
-  ['subj-datalist','edit-subj-datalist'].forEach(id=>{const dl=document.getElementById(id);if(dl)dl.innerHTML=subjects.map(s=>`<option value="${s}">`).join('');});
+  ['subj-datalist','edit-subj-datalist'].forEach(id=>{const dl=document.getElementById(id);if(dl)dl.innerHTML=subjects.map(s=>`<option value="${esc(s)}">`).join('');});
 }
 
 // ─── BACKUP ──────────────────────────────────────────────────────────────────
@@ -1062,7 +1065,7 @@ function scheduleNotification(){
       const dueNow=db.topics.filter(t=>getTopicStatus(t)==='due'||getTopicStatus(t)==='overdue').length;
       const missed=db.topics.filter(t=>getTopicStatus(t)==='overdue').length;
       let body='Keep your streak going!';
-      if(dueNow>0) body=`${dueNow} topic${dueNow>1?'s':''} due today${missed>0?' ('+missed+' overdue)':''}.'`;
+      if(dueNow>0) body=`${dueNow} topic${dueNow>1?'s':''} due today${missed>0?' ('+missed+' overdue)':''}.`;
       new Notification('Smara — Time to revise!',{body,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',tag:'smara-daily'});
       scheduleNotification();
     }
