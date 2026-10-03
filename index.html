@@ -431,16 +431,18 @@
 function clearAll(){ if(!confirm('Delete all topics?')) return; db={topics:[],settings:{}}; saveDB(); renderToday(); toast('Cleared'); }
 showPage('today');
 if('serviceWorker' in navigator){
+  // Only an update if a worker was already controlling this page (not first install)
+  const hadController=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('/sw.js').then(reg=>{
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
       nw.addEventListener('statechange',()=>{
-        if(nw.state==='activated'){ const b=document.getElementById('update-banner'); if(b) b.style.display='flex'; }
+        if(nw.state==='activated'&&hadController){ const b=document.getElementById('update-banner'); if(b) b.style.display='flex'; }
       });
     });
   }).catch(()=>{});
   navigator.serviceWorker.addEventListener('message',e=>{
-    if(e.data&&e.data.type==='SW_UPDATED'){ const b=document.getElementById('update-banner'); if(b) b.style.display='flex'; }
+    if(e.data&&e.data.type==='SW_UPDATED'&&hadController){ const b=document.getElementById('update-banner'); if(b) b.style.display='flex'; }
   });
 }
 </script>
